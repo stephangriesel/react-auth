@@ -4,9 +4,9 @@ class Auth {
   constructor() {
     this.auth0 = new auth0.WebAuth({
       // the following three lines MUST be updated
-      domain: '<YOUR_AUTH0_DOMAIN>',
-      audience: 'https://<YOUR_AUTH0_DOMAIN>/userinfo',
-      clientID: '<YOUR_AUTH0_CLIENT_ID>',
+      domain: 'stephangriesel.eu.auth0.com',
+      audience: 'https://stephangriesel.eu.auth0.com/userinfo',
+      clientID: 'pNI5NqBBuIm5myS8Lt2ynrOISjrIMxsI',
       redirectUri: 'http://localhost:3000/callback',
       responseType: 'id_token',
       scope: 'openid profile'
@@ -42,20 +42,34 @@ class Auth {
         if (!authResult || !authResult.idToken) {
           return reject(err);
         }
-        this.idToken = authResult.idToken;
-        this.profile = authResult.idTokenPayload;
-        // set the time that the id token will expire at
-        this.expiresAt = authResult.idTokenPayload.exp * 1000;
+        this.setSession(authResult);
         resolve();
       });
     })
   }
 
+  setSession(authResult) {
+    this.idToken = authResult.idToken;
+    this.profile = authResult.idTokenPayload;
+    // set the time that the id token will expire at
+    this.expiresAt = authResult.idTokenPayload.exp * 1000;
+  }
+
   signOut() {
-    // clear id token, profile, and expiration
-    this.idToken = null;
-    this.profile = null;
-    this.expiresAt = null;
+    this.auth0.logout({
+      returnTo: 'http://localhost:3000',
+      clientID: 'pNI5NqBBuIm5myS8Lt2ynrOISjrIMxsI',
+    });
+  }
+
+  silentAuth() {
+    return new Promise((resolve, reject) => {
+      this.auth0.checkSession({}, (err, authResult) => {
+        if (err) return reject(err);
+        this.setSession(authResult);
+        resolve();
+      });
+    });
   }
 }
 
